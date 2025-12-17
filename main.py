@@ -1,5 +1,7 @@
 import sys
 import os
+import subprocess
+import pandas as pd
 from PyQt6.QtWidgets import (
     QApplication, QWidget, QVBoxLayout, QPushButton,
     QLabel, QFileDialog, QLineEdit, QMessageBox
@@ -9,6 +11,7 @@ from PyQt6.QtCore import Qt
 from constants import *
 from minutes import *
 from roster import create_roster
+from editor import launch_editor
 
 class ExcelDropLineEdit(QLineEdit):
     def __init__(self):
@@ -53,12 +56,16 @@ class MinutesGeneratorApp(QWidget):
         self.status_label = QLabel("")
 
         self.run_button.clicked.connect(self.run_generator)
-
+        
+        self.run_e_button = QPushButton("Open Editor")
+        self.run_e_button.clicked.connect(self.run_editor)
+        
         self.layout.addWidget(self.label_file)
         self.layout.addWidget(self.excel_input)
         self.layout.addWidget(self.label_folder)
         self.layout.addWidget(self.output_folder_input)
         self.layout.addWidget(self.run_button)
+        self.layout.addWidget(self.run_e_button)
         self.layout.addWidget(self.status_label)
         self.setLayout(self.layout)
 
@@ -100,6 +107,16 @@ class MinutesGeneratorApp(QWidget):
         except Exception as e:
             self.status_label.setText("An error occurred.")
             QMessageBox.critical(self, "Error", str(e))
+    
+    def run_editor(self):
+        excel_file = self.excel_input.text().strip()
+
+        if not os.path.isfile(excel_file) or not excel_file.endswith('.xlsx'):
+            QMessageBox.critical(self, "Invalid File", "Please select a valid Excel (.xlsx) file.")
+            return
+
+        # keep reference on self to prevent garbage collection
+        self._editor_window = launch_editor(excel_file)
 
 
 def read(excel_file):
